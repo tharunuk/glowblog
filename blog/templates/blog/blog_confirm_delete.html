@@ -1,0 +1,17 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 4rem auto;">
+    <div class="card">
+        <h2 style="margin-bottom: 2rem;">Delete Blog Post?</h2>
+        <p style="margin-bottom: 2rem; color: var(--text-muted);">Are you sure you want to delete <strong>"{{ post.subject }}"</strong>? This action cannot be undone.</p>
+        <form method="POST">
+            {% csrf_token %}
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="background: var(--accent); flex: 1; justify-content: center;">Yes, Delete</button>
+                <a href="{% url 'blog_history' %}" class="btn btn-outline" style="flex: 1; justify-content: center;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

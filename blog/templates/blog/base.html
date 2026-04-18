@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GlowBlog{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --glass: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #f43f5e;
+            --gradient: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at top right, rgba(129, 140, 248, 0.1), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(192, 132, 252, 0.1), transparent 40%);
+        }
+
+        /* Navbar */
+        nav {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(129, 140, 248, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+        }
+
+        /* Messages */
+        .messages {
+            margin-bottom: 1.5rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-success { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; }
+        .alert-error { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; }
+
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'index' %}" class="logo">GlowBlog</a>
+        <div class="nav-links">
+            <a href="{% url 'index' %}">Explore</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'create_blog' %}">Create</a>
+                <a href="{% url 'blog_history' %}">My History</a>
+                <a href="{% url 'profile' %}">Profile</a>
+                <a href="{% url 'logout' %}" class="btn btn-outline" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
+                <form id="logout-form" action="{% url 'logout' %}" method="POST" style="display: none;">
+                    {% csrf_token %}
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'register' %}" class="btn btn-primary">Join Now</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+        &copy; 2024 GlowBlog. Built with Passion.
+    </footer>
+
+    <script>
+        // Micro-animations and interactions
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.style.transform = 'scale(0.95)');
+            btn.addEventListener('mouseup', () => btn.style.transform = 'scale(1)');
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

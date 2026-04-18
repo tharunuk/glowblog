@@ -1,0 +1,27 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<div style="max-width: 450px; margin: 4rem auto;">
+    <div class="card">
+        <h2 style="margin-bottom: 2rem; text-align: center;">Join GlowBlog</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label>{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <small style="color: var(--accent);">{{ error }}</small>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">Sign Up</button>
+        </form>
+        <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
+            Already have an account? <a href="{% url 'login' %}" style="color: var(--primary); text-decoration: none;">Login here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
