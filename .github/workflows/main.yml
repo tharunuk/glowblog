@@ -1,46 +1,87 @@
-name: DevSecOps Pipeline
+name: Adaptive DevSecOps Pipeline
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+    # ✅ FULL GIT HISTORY FIX
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
+    # ✅ DETECT CHANGES (SAFE VERSION)
     - name: Detect Changes
       id: changes
       run: |
-        git fetch origin main
-        CHANGED=$(git diff --name-only HEAD^ HEAD)
+        if git rev-parse HEAD^ >/dev/null 2>&1; then
+          CHANGED=$(git diff --name-only HEAD^ HEAD)
+        else
+          CHANGED=$(git ls-files)
+        fi
+        echo "files=$CHANGED"
         echo "files=$CHANGED" >> $GITHUB_OUTPUT
 
+    # ✅ DECIDE MODE (SMART)
     - name: Decide Pipeline Mode
       id: mode
       run: |
-        if echo "${{ steps.changes.outputs.files }}" | grep -E "templates|static"; then
+        FILES="${{ steps.changes.outputs.files }}"
+        echo "Changed files: $FILES"
+
+        if echo "$FILES" | grep -E "templates|static|css|js"; then
           echo "mode=light" >> $GITHUB_OUTPUT
-        elif echo "${{ steps.changes.outputs.files }}" | grep -E "views|models|settings"; then
+        elif echo "$FILES" | grep -E "views|models|forms|urls|settings"; then
           echo "mode=full" >> $GITHUB_OUTPUT
         else
           echo "mode=medium" >> $GITHUB_OUTPUT
         fi
 
+    # ✅ SHOW MODE (for logs/report)
+    - name: Print Mode
+      run: echo "Pipeline Mode = ${{ steps.mode.outputs.mode }}"
+
+    # ✅ PYTHON SETUP
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: 3.12
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+    # ✅ CACHE (VERY IMPORTANT FOR PERFORMANCE)
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
-    - name: Run Tests
+    # ✅ INSTALL DEPENDENCIES
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # ✅ ADAPTIVE TEST EXECUTION
+    - name: Run Tests (Full)
+      if: steps.mode.outputs.mode == 'full'
       run: python manage.py test
 
+    - name: Run Tests (Medium)
+      if: steps.mode.outputs.mode == 'medium'
+      run: python manage.py test blog
+
+    - name: Skip Tests (Light)
+      if: steps.mode.outputs.mode == 'light'
+      run: echo "Skipping tests for UI-only changes"
+
+    # ✅ SONARQUBE (ADAPTIVE)
     - name: SonarQube Scan (Full)
       if: steps.mode.outputs.mode == 'full'
       uses: SonarSource/sonarqube-scan-action@v2
@@ -62,7 +103,9 @@ jobs:
       if: steps.mode.outputs.mode == 'light'
       run: echo "Skipping SonarQube for UI changes"
 
+    # ✅ SAFE DEPLOY (ONLY IF SUCCESS)
     - name: Deploy to EC2
+      if: success()
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.AWS_EC2_HOST }}
@@ -74,3 +117,7 @@ jobs:
           source venv/bin/activate
           pip install -r requirements.txt
           sudo systemctl restart gunicorn
+
+    # ✅ LOG COMPLETION
+    - name: Pipeline Complete
+      run: echo "Adaptive pipeline executed successfully 🚀"
