@@ -1,0 +1,29 @@
+- name: Detect Changed Files
+  id: changes
+  run: |
+    git fetch origin main
+    echo "files=$(git diff --name-only HEAD^ HEAD)" >> $GITHUB_OUTPUT
+
+# FULL SCAN (Backend changes)
+- name: SonarQube Full Scan
+  if: contains(steps.changes.outputs.files, 'views') || contains(steps.changes.outputs.files, 'models') || contains(steps.changes.outputs.files, 'settings')
+  uses: SonarSource/sonarqube-scan-action@v2
+  env:
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+# MEDIUM SCAN (Other code changes)
+- name: SonarQube Medium Scan
+  if: contains(steps.changes.outputs.files, '.py')
+  uses: SonarSource/sonarqube-scan-action@v2
+  with:
+    args: >
+      -Dsonar.sources=blog
+  env:
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+# SKIP (UI only)
+- name: Skip SonarQube
+  if: contains(steps.changes.outputs.files, 'templates') || contains(steps.changes.outputs.files, 'static')
+  run: echo "Skipping scan for UI changes"
