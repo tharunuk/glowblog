@@ -1,3 +1,76 @@
+name: DevSecOps Pipeline
+
 on:
   push:
     branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Detect Changes
+      id: changes
+      run: |
+        git fetch origin main
+        CHANGED=$(git diff --name-only HEAD^ HEAD)
+        echo "files=$CHANGED" >> $GITHUB_OUTPUT
+
+    - name: Decide Pipeline Mode
+      id: mode
+      run: |
+        if echo "${{ steps.changes.outputs.files }}" | grep -E "templates|static"; then
+          echo "mode=light" >> $GITHUB_OUTPUT
+        elif echo "${{ steps.changes.outputs.files }}" | grep -E "views|models|settings"; then
+          echo "mode=full" >> $GITHUB_OUTPUT
+        else
+          echo "mode=medium" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.12
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run Tests
+      run: python manage.py test
+
+    - name: SonarQube Scan (Full)
+      if: steps.mode.outputs.mode == 'full'
+      uses: SonarSource/sonarqube-scan-action@v2
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    - name: SonarQube Scan (Medium)
+      if: steps.mode.outputs.mode == 'medium'
+      uses: SonarSource/sonarqube-scan-action@v2
+      with:
+        args: >
+          -Dsonar.sources=blog
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    - name: Skip Scan (Light)
+      if: steps.mode.outputs.mode == 'light'
+      run: echo "Skipping SonarQube for UI changes"
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.AWS_EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.AWS_SSH_KEY }}
+        script: |
+          cd glowblog
+          git pull
+          source venv/bin/activate
+          pip install -r requirements.txt
+          sudo systemctl restart gunicorn
